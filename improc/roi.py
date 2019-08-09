@@ -44,6 +44,7 @@ def padded_crop(image, roi, mode='reflect'):
     padding = [(max(0, -s.start), max(0, s.stop - size))
                for s, size in zip(roi, image.shape)]
     roi = tuple(
-        slice(s.start + p[0], s.stop + p[0]) for s, p in zip(roi, padding))
+        slice(max(0, s.start), min(dim, s.stop))
+        for s, dim in zip(roi, image.shape))
 
-    return np.pad(image, padding, mode)[roi]
+    return np.pad(image[roi], padding, mode)
