@@ -88,7 +88,7 @@ class LSCAccessor:
             for p, ext in zip(self.path, self._obj.ext)
         ]
 
-    def write(self, data):
+    def write(self, data, index=True):
 
         # if data is note a list, we assume it is because the is only one item
         if not isinstance(data, list):
@@ -100,7 +100,7 @@ class LSCAccessor:
             os.makedirs(out_dir, exist_ok=True)
 
             if ext == 'csv':
-                d.to_csv(p)
+                d.to_csv(p, index=index)
             elif ext == 'tif':
                 imsave(p, d)
             else:
