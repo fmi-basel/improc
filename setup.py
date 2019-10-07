@@ -12,5 +12,5 @@ setup(name='improc',
       packages=find_packages(exclude=[
           'tests',
       ]),
-      install_requires=['numpy>=1.15.4', 'scikit-image', 'scipy'],
+      install_requires=['numpy>=1.15.4', 'scikit-image', 'scipy', 'parse'],
       zip_safe=False)
