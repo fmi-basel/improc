@@ -6,7 +6,7 @@ from scipy.ndimage.filters import gaussian_filter
 
 
 def segment_from_projections(image, spacing=1, sigma=2):
-    '''Segments a 3 dimensional image from its projected planes and returns the interesection'''
+    '''Segments a 3 dimensional image from its projected planes and returns the intersection'''
 
     spacing = np.broadcast_to(np.asarray(spacing), image.ndim)
     mask = np.ones(image.shape, dtype=bool)
