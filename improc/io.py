@@ -3,6 +3,7 @@ import parse
 from glob import glob
 from functools import lru_cache
 from skimage.external.tifffile import imread, imsave
+from PIL import Image
 import pandas as pd
 import numpy as np
 import os
@@ -49,7 +50,6 @@ def parse_collection(pattern, keys):
 # ~ @pd.api.extensions.register_series_accessor('lsc')
 class LSCAccessor:
     '''Adds cached read/write accessors to pandas series representing lightsheet items.'''
-
     def __init__(self, pandas_obj):
         if isinstance(pandas_obj, pd.Series):
             self._obj = pandas_obj.to_frame().T
@@ -88,7 +88,7 @@ class LSCAccessor:
             for p, ext in zip(self.path, self._obj.ext)
         ]
 
-    def write(self, data, index=True):
+    def write(self, data, index=True, compressed=False):
 
         # if data is note a list, we assume it is because the is only one item
         if not isinstance(data, list):
@@ -102,16 +102,26 @@ class LSCAccessor:
             if ext == 'csv':
                 d.to_csv(p, index=index)
             elif ext == 'tif':
-                imsave(p, d)
+
+                if compressed:
+                    img = Image.fromarray(d[0]).save(
+                        p,
+                        compression="tiff_lzw",
+                        save_all=True,
+                        append_images=[
+                            Image.fromarray(img_slice) for img_slice in d[1:]
+                        ])
+                else:
+                    imsave(p, d)
+
             else:
                 raise NotImplementedError(
                     'writing .{} files not implemented'.format(ext))
 
     @property
     def path(self):
-        return self._obj.reset_index().apply(lambda x: x.pattern.format(
-            **x.to_dict()),
-                                             axis=1)
+        return self._obj.reset_index().apply(
+            lambda x: x.pattern.format(**x.to_dict()), axis=1)
 
     @staticmethod
     @lru_cache(maxsize=0)
