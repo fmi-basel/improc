@@ -5,9 +5,10 @@ from skimage.measure import regionprops
 
 
 def extend_bbox(bbox, max_shape, spacing, border):
-    '''pads the bounding box to have border / spacing pixels more.
+    '''pads the bounding box to have (border / spacing) pixels more.
 
     '''
+
     def pad(bbox_range, dim_max, dim_spacing):
         '''create a padded slice while respecting the original dimension
         of the array.
