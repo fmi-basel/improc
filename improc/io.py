@@ -50,6 +50,7 @@ def parse_collection(pattern, keys):
 # ~ @pd.api.extensions.register_series_accessor('lsc')
 class LSCAccessor:
     '''Adds cached read/write accessors to pandas series representing lightsheet items.'''
+
     def __init__(self, pandas_obj):
         if isinstance(pandas_obj, pd.Series):
             self._obj = pandas_obj.to_frame().T
@@ -71,8 +72,10 @@ class LSCAccessor:
             return self._obj.loc(axis=0)[key]
         else:
             # prevent from returning a pd.Series or dropping index level
-            if isinstance(key, (list, tuple, np.ndarray)) and len(key) != len(
-                    self._obj.index.levels):
+            if isinstance(
+                    self._obj.index, pd.core.index.MultiIndex) and isinstance(
+                        key, (list, tuple, np.ndarray)) and len(key) != len(
+                            self._obj.index.levels):
                 return self._obj.xs(key, drop_level=False)
             else:
                 return self._obj.loc(axis=0)[[key]]
@@ -120,8 +123,9 @@ class LSCAccessor:
 
     @property
     def path(self):
-        return self._obj.reset_index().apply(
-            lambda x: x.pattern.format(**x.to_dict()), axis=1)
+        return self._obj.reset_index().apply(lambda x: x.pattern.format(
+            **x.to_dict()),
+                                             axis=1)
 
     @staticmethod
     @lru_cache(maxsize=0)
