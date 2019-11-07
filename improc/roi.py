@@ -8,7 +8,6 @@ def extend_bbox(bbox, max_shape, spacing, border):
     '''pads the bounding box to have (border / spacing) pixels more.
 
     '''
-
     def pad(bbox_range, dim_max, dim_spacing):
         '''create a padded slice while respecting the original dimension
         of the array.
@@ -41,7 +40,7 @@ def shift_roi(bb, centers, spacing=1):
         slice(s.start + off, s.stop + off) for s, off in zip(bb, offset))
 
 
-def padded_crop(image, roi, mode='reflect'):
+def padded_crop(image, roi, mode='constant'):
     padding = [(max(0, -s.start), max(0, s.stop - size))
                for s, size in zip(roi, image.shape)]
     roi = tuple(
