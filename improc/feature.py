@@ -10,9 +10,6 @@ def local_max(image, min_distance=1, threshold=0.5, spacing=1):
     Notes:
     unlike skimage.feature.peak_local_max, Supports anisotropic spacing'''
 
-    if min_distance < 1:
-        raise ValueError('min_distance should be > 1: {}'.format(min_distance))
-
     spacing = np.broadcast_to(np.asarray(spacing), image.ndim)
 
     # smooth details smaller than radius of interest
@@ -21,8 +18,7 @@ def local_max(image, min_distance=1, threshold=0.5, spacing=1):
     # maintain the max value regardless of sigma to facilitate threshold selection
     blurred_image *= (image.max() / blurred_image.max())
 
-    max_filt_size = np.maximum(1, min_distance / spacing * 2 + 1)
-    max_image = maximum_filter(blurred_image, size=max_filt_size)
+    max_image = maximum_filter(blurred_image, size=3)
     markers = np.argwhere((max_image == blurred_image)
                           & (blurred_image >= threshold))
     if len(markers) == 0:
