@@ -50,7 +50,6 @@ def parse_collection(pattern, keys):
 # ~ @pd.api.extensions.register_series_accessor('lsc')
 class LSCAccessor:
     '''Adds cached read/write accessors to pandas series representing lightsheet items.'''
-
     def __init__(self, pandas_obj):
         if isinstance(pandas_obj, pd.Series):
             self._obj = pandas_obj.to_frame().T
@@ -104,7 +103,7 @@ class LSCAccessor:
 
             if ext == 'csv':
                 d.to_csv(p, index=index)
-            elif ext == 'tif':
+            elif ext == 'tif' or ext == 'stk':
 
                 if compressed:
                     img = Image.fromarray(d[0]).save(
@@ -123,9 +122,8 @@ class LSCAccessor:
 
     @property
     def path(self):
-        return self._obj.reset_index().apply(lambda x: x.pattern.format(
-            **x.to_dict()),
-                                             axis=1)
+        return self._obj.reset_index().apply(
+            lambda x: x.pattern.format(**x.to_dict()), axis=1)
 
     @staticmethod
     @lru_cache(maxsize=0)
@@ -134,7 +132,7 @@ class LSCAccessor:
 
     @classmethod
     def map_read_fct(cls, p, ext):
-        if ext == 'tif':
+        if ext == 'tif' or ext == 'stk':
             return cls.read_img(p)
         elif ext == 'csv':
             return pd.read_csv(p)
