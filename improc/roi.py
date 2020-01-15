@@ -2,6 +2,8 @@ import numpy as np
 
 from scipy.spatial.distance import cdist
 from skimage.measure import regionprops
+from scipy.ndimage import find_objects
+from math import ceil
 
 
 def extend_bbox(bbox, max_shape, spacing, border):
@@ -40,11 +42,40 @@ def shift_roi(bb, centers, spacing=1):
         slice(s.start + off, s.stop + off) for s, off in zip(bb, offset))
 
 
-def padded_crop(image, roi, mode='constant'):
+def padded_crop(image, roi, mode='constant', constant_values=0):
     padding = [(max(0, -s.start), max(0, s.stop - size))
                for s, size in zip(roi, image.shape)]
     roi = tuple(
         slice(max(0, s.start), min(dim, s.stop))
         for s, dim in zip(roi, image.shape))
 
-    return np.pad(image[roi], padding, mode)
+    return np.pad(image[roi], padding, mode, constant_values=constant_values)
+
+
+def crop_object(images,
+                labels,
+                margins=0,
+                min_shape=0,
+                mode='constant',
+                constant_values=0):
+    '''
+    Crop all images based on object found in labels.
+
+    To crop labels itself, pass it in the images list as well.
+    '''
+
+    margins = np.broadcast_to(np.asarray(margins), labels.ndim).copy()
+    min_shape = np.broadcast_to(np.asarray(min_shape), labels.ndim)
+
+    loc = find_objects(labels >= 1)[0]
+
+    # if needed, increase margins to output object at least min_shape
+    object_shape = np.asarray(tuple(sli.stop - sli.start for sli in loc))
+    margins = np.maximum(margins,
+                         np.ceil((min_shape - object_shape) / 2).astype(int))
+
+    loc = tuple(
+        slice(sli.start - margin, sli.stop + margin)
+        for sli, margin in zip(loc, margins))
+
+    return [padded_crop(image, loc, mode, constant_values) for image in images]
