@@ -1,8 +1,12 @@
 import numpy as np
+from multiprocessing import Pool
+import os
+from functools import lru_cache
 
 from scipy.ndimage.morphology import binary_fill_holes, distance_transform_edt, binary_opening
 from scipy.ndimage import find_objects
 from scipy.ndimage import label as nd_label
+from tqdm import tqdm
 
 from improc.label import relabel_size_sorted
 
@@ -21,8 +25,8 @@ def fill_holes_sliced(mask):
 
 def split_and_size_filter(mask, size_threshold=None):
     '''
-    split disconnected components and keep largest or keep larger that 
-    size_threshold if specified.
+    Returns the largest of disjoint components or union of components 
+    larger than size_threshold if specified.
     '''
 
     labels, n_split = nd_label(mask)
@@ -40,6 +44,7 @@ def split_and_size_filter(mask, size_threshold=None):
         return labels == 1
 
 
+@lru_cache(maxsize=1)
 def anisotropic_sphere_struct(radius, spacing):
     '''Returns binary n-sphere with possibly anisotropic sampling'''
 
@@ -52,46 +57,71 @@ def anisotropic_sphere_struct(radius, spacing):
     return struct
 
 
-def clean_up_mask(mask, struct=None, fill_holes=True, size_threshold=None):
+def clean_up_mask(mask,
+                  fill_holes=True,
+                  radius=None,
+                  size_threshold=None,
+                  spacing=1):
     '''slice-wise hole filling, binary opening to clean jagged edges 
     (optional) and removal of small disconnected components.'''
 
-    # process only object region with one pixel padding
-    loc = find_objects(mask)[0]
-    loc = tuple(slice(max(0, s.start - 1), s.stop + 1) for s in loc)
-
-    submask = mask[loc]
-
     if fill_holes:
-        submask = fill_holes_sliced(mask[loc])
+        mask = fill_holes_sliced(mask)
 
-    if struct is not None:
-        submask = binary_opening(submask, struct)
+    if radius is not None:
+        spacing = tuple(np.broadcast_to(np.array(spacing), mask.ndim))
+        struct = anisotropic_sphere_struct(radius, spacing)
+        mask = binary_opening(mask, struct)
 
-    mask[loc] = split_and_size_filter(submask, size_threshold)
+    mask = split_and_size_filter(mask, size_threshold)
 
     return mask
 
 
+def _pooled_clean_up_mask(packed_inputs):
+    return clean_up_mask(*packed_inputs)
+
+
+# NOTE would be a better fit in improc.label but circular import dependency with "relabel_size_sorted"...??
 def clean_up_labels(labels,
-                    idxs=None,
-                    struct=None,
                     fill_holes=True,
-                    size_threshold=None):
+                    radius=None,
+                    size_threshold=None,
+                    spacing=1,
+                    processes=None):
     '''Cleans up labels, one at a time.
     
-    Fill holes (slice wise), binary opening with struct if provided
+    Fill holes (slice wise), binary opening if radius provided
     and removes small disconnected components.
     
     Optionaly only processes/keeps the indices passed in arguments'''
 
-    if idxs is None:
-        idxs = np.unique(labels)[1:]
+    locs = find_objects(labels)
+    # expand boundary by one px
+    locs = [
+        tuple(slice(max(0, s.start - 1), s.stop + 1)
+              for s in loc) if loc else None for loc in locs
+    ]
 
     clean_labels = np.zeros_like(labels)
-    for l in idxs:
 
-        mask = clean_up_mask(labels == l, struct, fill_holes, size_threshold)
-        clean_labels[mask] = l
+    # create generator for cleaning label masks and multiprocess
+    cleanup_inputs = ((labels[loc] == l, fill_holes, radius, size_threshold,
+                       spacing) for l, loc in enumerate(locs, start=1) if loc)
+
+    # increase chunksize for large number of items
+    if processes is None:
+        processes = os.cpu_count(
+        )  # default value in Pool, but needed for chunksize
+    chunksize = max(1, len(locs) // (processes * 10))
+
+    with Pool(processes=processes) as pool:
+        # ~for l, (loc, mask) in enumerate(zip(tqdm(locs), pool.imap(_pooled_clean_up_mask, cleanup_inputs, chunksize)), start=1):
+        for l, (loc, mask) in enumerate(zip(
+                locs,
+                pool.imap(_pooled_clean_up_mask, cleanup_inputs, chunksize)),
+                                        start=1):
+            if loc:
+                clean_labels[loc][mask] = l
 
     return clean_labels
