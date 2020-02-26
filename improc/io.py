@@ -2,7 +2,7 @@ import re
 import parse
 from glob import glob
 from functools import lru_cache
-from skimage.external.tifffile import imread, imsave
+from skimage.io import imread, imsave
 from PIL import Image
 import pandas as pd
 import numpy as np
@@ -103,7 +103,7 @@ class LSCAccessor:
 
             if ext == 'csv':
                 d.to_csv(p, index=index)
-            elif ext == 'tif' or ext == 'stk':
+            elif ext == 'tif' or ext == 'stk' or ext == 'png':
 
                 if compressed:
                     img = Image.fromarray(d[0]).save(
@@ -132,7 +132,7 @@ class LSCAccessor:
 
     @classmethod
     def map_read_fct(cls, p, ext):
-        if ext == 'tif' or ext == 'stk':
+        if ext == 'tif' or ext == 'stk' or ext == 'png':
             return cls.read_img(p)
         elif ext == 'csv':
             return pd.read_csv(p)
