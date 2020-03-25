@@ -92,7 +92,7 @@ class LSCAccessor:
 
     def write(self, data, index=True, compressed=False):
 
-        # if data is note a list, we assume it is because the is only one item
+        # if data is not a list, we assume it is because the is only one item
         if not isinstance(data, list):
             data = [data]
 
@@ -103,7 +103,7 @@ class LSCAccessor:
 
             if ext == 'csv':
                 d.to_csv(p, index=index)
-            elif ext == 'tif' or ext == 'stk' or ext == 'png':
+            elif ext == 'tif' or ext == 'stk' or ext == 'png' or ext == 'bmp':
 
                 if compressed:
                     img = Image.fromarray(d[0]).save(
@@ -132,7 +132,7 @@ class LSCAccessor:
 
     @classmethod
     def map_read_fct(cls, p, ext):
-        if ext == 'tif' or ext == 'stk' or ext == 'png':
+        if ext == 'tif' or ext == 'stk' or ext == 'png' or ext == 'bmp':
             return cls.read_img(p)
         elif ext == 'csv':
             return pd.read_csv(p)
