@@ -13,7 +13,8 @@ def resample_labels(labels, factor):
     resampled_labels = np.zeros(np.round(labels.shape * factor).astype(int),
                                 dtype=np.int16)
 
-    locs = find_objects(labels > 0)
+    locs = find_objects(labels)
+    locs = [loc for loc in locs if loc is not None]
 
     # ignore label 0 (background)
     for l, loc in zip(filter(None, np.unique(labels)), locs):
@@ -29,7 +30,7 @@ def resample_labels(labels, factor):
         coords = tuple([*coords])
 
         # create upsampled mask
-        resampled_mask = np.zeros(np.ceil(mask.shape * factor).astype(int),
+        resampled_mask = np.zeros(np.round(mask.shape * factor).astype(int),
                                   dtype=np.float32)
         resampled_mask[coords] = np.prod(factor)
 
