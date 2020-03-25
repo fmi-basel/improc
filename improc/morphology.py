@@ -23,14 +23,21 @@ def fill_holes_sliced(mask):
         return mask
 
 
-def split_and_size_filter(mask, size_threshold=None):
+def split_and_size_filter(mask, size_threshold=None, keep_largest=False):
     '''
     Returns the largest of disjoint components or union of components 
     larger than size_threshold if specified.
     '''
 
+    if size_threshold is None and not keep_largest:
+        # nothing to do
+        return mask
+
     labels, n_split = nd_label(mask)
     labels = relabel_size_sorted(labels)
+
+    if keep_largest:
+        labels[labels != 1] = 0
 
     if size_threshold is not None:
         unique_l, count = np.unique(labels, return_counts=True)
@@ -39,9 +46,7 @@ def split_and_size_filter(mask, size_threshold=None):
         if len(small_l) > 0:
             labels[labels >= min(small_l)] = 0
 
-        return labels > 0
-    else:
-        return labels == 1
+    return labels > 0
 
 
 @lru_cache(maxsize=1)
@@ -61,6 +66,7 @@ def clean_up_mask(mask,
                   fill_holes=True,
                   radius=None,
                   size_threshold=None,
+                  keep_largest=False,
                   spacing=1):
     '''slice-wise hole filling, binary opening to clean jagged edges 
     (optional) and removal of small disconnected components.'''
@@ -73,13 +79,17 @@ def clean_up_mask(mask,
         struct = anisotropic_sphere_struct(radius, spacing)
         mask = binary_opening(mask, struct)
 
-    mask = split_and_size_filter(mask, size_threshold)
+    mask = split_and_size_filter(mask, size_threshold, keep_largest)
 
     return mask
 
 
 def _pooled_clean_up_mask(packed_inputs):
-    return clean_up_mask(*packed_inputs)
+
+    if packed_inputs is None:
+        return None
+    else:
+        return clean_up_mask(*packed_inputs)
 
 
 # NOTE would be a better fit in improc.label but circular import dependency with "relabel_size_sorted"...??
@@ -87,6 +97,7 @@ def clean_up_labels(labels,
                     fill_holes=True,
                     radius=None,
                     size_threshold=None,
+                    keep_largest=False,
                     spacing=1,
                     processes=None):
     '''Cleans up labels, one at a time.
@@ -107,7 +118,8 @@ def clean_up_labels(labels,
 
     # create generator for cleaning label masks and multiprocess
     cleanup_inputs = ((labels[loc] == l, fill_holes, radius, size_threshold,
-                       spacing) for l, loc in enumerate(locs, start=1) if loc)
+                       keep_largest, spacing) if loc else None
+                      for l, loc in enumerate(locs, start=1))
 
     # increase chunksize for large number of items
     if processes is None:
