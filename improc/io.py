@@ -105,6 +105,9 @@ class LSCAccessor:
                 d.to_csv(p, index=index)
             elif ext == 'tif' or ext == 'stk' or ext == 'png' or ext == 'bmp':
 
+                if d.ndim == 2:  # 2D image
+                    d = d[None]
+
                 if compressed:
                     img = Image.fromarray(d[0]).save(
                         p,
