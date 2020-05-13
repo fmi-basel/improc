@@ -71,10 +71,10 @@ class LSCAccessor:
             return self._obj.loc(axis=0)[key]
         else:
             # prevent from returning a pd.Series or dropping index level
-            if isinstance(
-                    self._obj.index, pd.core.index.MultiIndex) and isinstance(
-                        key, (list, tuple, np.ndarray)) and len(key) != len(
-                            self._obj.index.levels):
+            if isinstance(self._obj.index, pd.MultiIndex) and isinstance(
+                    key,
+                (list, tuple,
+                 np.ndarray)) and len(key) != len(self._obj.index.levels):
                 return self._obj.xs(key, drop_level=False)
             else:
                 return self._obj.loc(axis=0)[[key]]
@@ -105,10 +105,10 @@ class LSCAccessor:
                 d.to_csv(p, index=index)
             elif ext == 'tif' or ext == 'stk' or ext == 'png' or ext == 'bmp':
 
-                if d.ndim == 2:  # 2D image
-                    d = d[None]
-
                 if compressed:
+                    if d.ndim == 2:  # 2D image
+                        d = d[None]
+
                     img = Image.fromarray(d[0]).save(
                         p,
                         compression="tiff_lzw",
@@ -118,6 +118,11 @@ class LSCAccessor:
                         ])
                 else:
                     imsave(p, d)
+            elif ext == 'npz':
+                # save binary comrpessed numpy array
+                out_dir = os.path.dirname(p)
+                os.makedirs(out_dir, exist_ok=True)
+                np.savez_compressed(p, arr=d)
 
             else:
                 raise NotImplementedError(
@@ -139,6 +144,8 @@ class LSCAccessor:
             return cls.read_img(p)
         elif ext == 'csv':
             return pd.read_csv(p)
+        elif ext == 'npz':
+            return np.load(p)['arr']
         else:
             raise NotImplementedError(
                 'Reading .{} files not implemented'.format(ext))
