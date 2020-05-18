@@ -6,6 +6,7 @@ from functools import lru_cache
 from scipy.ndimage.morphology import binary_fill_holes, distance_transform_edt, binary_opening
 from scipy.ndimage import find_objects
 from scipy.ndimage import label as nd_label
+from skimage.segmentation import relabel_sequential
 from tqdm import tqdm
 
 from improc.label import relabel_size_sorted
@@ -99,7 +100,8 @@ def clean_up_labels(labels,
                     size_threshold=None,
                     keep_largest=False,
                     spacing=1,
-                    processes=None):
+                    processes=None,
+                    sequential=False):
     '''Cleans up labels, one at a time.
     
     Fill holes (slice wise), binary opening if radius provided
@@ -135,5 +137,8 @@ def clean_up_labels(labels,
                                         start=1):
             if loc:
                 clean_labels[loc][mask] = l
+
+    if sequential:
+        clean_labels = relabel_sequential(clean_labels)[0]
 
     return clean_labels
