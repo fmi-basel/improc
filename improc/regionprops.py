@@ -272,7 +272,10 @@ class SKRegionPropFeatureExtractor(BaseFeatureExtractor):
 
     # skimage uses 2D names for 3D features (e.g. area, perimeter, etc.)
     _name_mapping_2D_3D = {'area': 'volume'}
-    _name_apping_3D_2D = {val: key for key, val in _name_mapping_2D_3D.items()}
+    _name_mapping_3D_2D = {
+        val: key
+        for key, val in _name_mapping_2D_3D.items()
+    }
     _implemented_features = {
         'label', 'volume', 'area', 'centroid', 'weighted_centroid',
         'minor_axis_length', 'major_axis_length', 'eccentricity', 'perimeter',
@@ -385,8 +388,8 @@ class SKRegionPropFeatureExtractor(BaseFeatureExtractor):
         # map back 3D feature names if 3D image
         if self.ndim == 3:
             props = {
-                self._name_apping_2D_3D.get(key, key): val
-                for key, val in props.items
+                self._name_mapping_2D_3D.get(key, key): val
+                for key, val in props.items()
             }
 
         return props
