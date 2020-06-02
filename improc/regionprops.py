@@ -48,12 +48,18 @@ class BaseFeatureExtractor():
         if self.label_targets is None:
             labels = None
         elif self.label_targets != 'all':
-            labels = {t: labels[t] for t in self.label_targets}
+            labels = {
+                key: val
+                for key, val in labels.items() if key in self.label_targets
+            }
 
         if self.channel_targets is None:
             channels = None
         elif self.channel_targets != 'all':
-            channels = {t: channels[t] for t in self.channel_targets}
+            channels = {
+                key: val
+                for key, val in channels.items() if key in self.channel_targets
+            }
 
         if labels is None and channels is None:
             raise ValueError(
