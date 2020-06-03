@@ -10,6 +10,9 @@ from scipy.ndimage.measurements import labeled_comprehension
 from scipy.ndimage.morphology import distance_transform_edt
 from scipy.ndimage import find_objects
 
+# TODO test for 3D feature extraction/conversion
+# TODO test with empty labels
+
 
 class BaseFeatureExtractor():
     '''Base class for feature extractors. Extract features from all combinations 
@@ -84,6 +87,8 @@ class BaseFeatureExtractor():
         for (label_key,
              label), (ch_key, ch) in itertools.product(labels.items(),
                                                        channels.items()):
+            if label.max() == 0:  # empty label image
+                continue
 
             props = self._extract_features(label, ch)
 
@@ -214,6 +219,12 @@ class DistanceTransformFeatureExtractor(BaseFeatureExtractor):
             physical_coords: whether to convert px coordinates to physical coordinates
             spacing: voxel size to do the coordinate conversion
         '''
+
+        # override channel target
+        try:
+            del kwargs['channel_targets']
+        except KeyError:
+            pass
         super().__init__(channel_targets=None, *args, **kwargs)
 
         for f in set(features) - self._implemented_features:
