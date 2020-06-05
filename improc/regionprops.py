@@ -421,36 +421,47 @@ class DerivedFeatureCalculator():
     _morphologial_shared_base_features = ['centroid']
     _regex_shared_base_features = '|'.join(_morphologial_shared_base_features)
 
-    def __init__(self, features=['form_factor']):
+    def __init__(self,
+                 label_targets='all',
+                 channel_targets='all',
+                 features=['form_factor']):
 
         for f in set(features) - self._implemented_features:
             raise NotImplementedError('feature {} not implemented'.format(f))
 
         self.features = features
+        self.label_targets = label_targets
+        self.channel_targets = channel_targets
 
     def __call__(self, props):
         props = props.set_index(['channel', 'region',
                                  'object_id']).sort_index()
 
+        new_props = props.copy()
+        if self.label_targets != 'all':
+            new_props = new_props.loc(axis=0)[:, self.label_targets]
+
+        if self.channel_targets != 'all':
+            new_props = new_props.loc(axis=0)[self.channel_targets + ['na']]
+
         props = props.append(
-            props.groupby(['channel', 'region', 'object_id']).apply(
+            new_props.groupby(['channel', 'region', 'object_id']).apply(
                 partial(self._compute_subdf_features, props=props)))
 
         return props.reset_index()
 
     def _compute_subdf_features(self, subdf, props):
-
         # add pure morphological features without assigned channel to subdf if available and needed
         idx = subdf.index[0]
         if idx[0] != 'na':
 
             try:
                 # channel='na', same region and object_id as subdf
-                shared_based_props = props.loc(axis=0)[('na', ) + idx[1:]]
-                shared_based_props = shared_based_props[
-                    shared_based_props.feature_name.str.contains(
+                shared_base_props = props.loc(axis=0)[('na', ) + idx[1:]]
+                shared_base_props = shared_base_props[
+                    shared_base_props.feature_name.str.contains(
                         self._regex_shared_base_features)]
-                subdf = subdf.append(shared_based_props)
+                subdf = subdf.append(shared_base_props)
             except Exception as e:
                 pass
 
