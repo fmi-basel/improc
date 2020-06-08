@@ -546,6 +546,12 @@ class CODerivedFeatureCalculator(BasedDerivedFeatureCalculator):
 
     grouping = ['channel', 'object_id']
 
+    def _compute_subdf_features(self, subdf, props):
+
+        res = super()._compute_subdf_features(subdf, props)
+        res['region'] = 'na'
+        return res
+
     @staticmethod
     def nuclei_fraction(cell__volume, nuclei__volume):
         '''4*π*Area/Perimeter^2
