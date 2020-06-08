@@ -563,7 +563,9 @@ class RegionDerivedFeatureCalculator(BasedDerivedFeatureCalculator):
 class GlobalFeatureExtractor():
     '''Combines several feature extractors and calculators and apply them at once
     to a pair of dictionnaries containing labels and channel images'''
-    def __init__(self, extractors, calculators=[]):
+    def __init__(self, extractors, calculators=None):
+        if calculators is None:
+            calculators = []
         self.extractors = extractors
         self.calculators = calculators
 
