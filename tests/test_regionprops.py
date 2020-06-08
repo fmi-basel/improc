@@ -64,8 +64,6 @@ PROPS_SHARED_MORPH = pd.DataFrame(data=
          ['ch2','obj',2,'weighted_centroid-0',80.0],
          ['ch2','obj',2,'weighted_centroid-1',90.0],],
         columns=['channel','region','object_id','feature_name', 'feature_value'])
-
-
 # yapf: enable
 
 

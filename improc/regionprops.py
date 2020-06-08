@@ -480,7 +480,7 @@ class BasedDerivedFeatureCalculator():
                 feature_value = None
 
             if feature_value is not None and isinstance(
-                    feature_value, (float, int)):
+                    feature_value, (float, int, bool)):
                 derived_features.append({
                     'feature_name': feature,
                     'feature_value': feature_value
