@@ -406,7 +406,7 @@ class SKRegionPropFeatureExtractor(BaseFeatureExtractor):
 class BasedDerivedFeatureCalculator():
     '''Base class to compute derived features from a dataframe of existing features.
     
-    static methods with featurename as arguments.'''
+    add new features as static methods with base feature names as arguments.'''
     @property
     @classmethod
     @abc.abstractmethod
@@ -522,8 +522,8 @@ class HybridDerivedFeatureCalculator(BasedDerivedFeatureCalculator):
         return np.linalg.norm(centroid - weighted_centroid)
 
 
-class RCODerivedFeatureCalculator(BasedDerivedFeatureCalculator):
-    '''Goupby region,channel,object and compute derived features'''
+class DerivedFeatureCalculator(BasedDerivedFeatureCalculator):
+    '''Computes derived features from a dataframe of existing features'''
 
     grouping = ['channel', 'region', 'object_id']
 
@@ -541,8 +541,8 @@ class RCODerivedFeatureCalculator(BasedDerivedFeatureCalculator):
         return 4 * np.pi * area / perimeter**2
 
 
-class CODerivedFeatureCalculator(BasedDerivedFeatureCalculator):
-    '''Goupby channel,object and compute derived features'''
+class RegionDerivedFeatureCalculator(BasedDerivedFeatureCalculator):
+    '''Computes features that depends on different regions'''
 
     grouping = ['channel', 'object_id']
 

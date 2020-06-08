@@ -3,7 +3,7 @@ import numpy as np
 import itertools
 import pandas as pd
 
-from improc.regionprops import BaseFeatureExtractor, SKRegionPropFeatureExtractor, QuantilesFeatureExtractor, IntensityFeatureExtractor, DistanceTransformFeatureExtractor, GlobalFeatureExtractor, RCODerivedFeatureCalculator, HybridDerivedFeatureCalculator, CODerivedFeatureCalculator
+from improc.regionprops import BaseFeatureExtractor, SKRegionPropFeatureExtractor, QuantilesFeatureExtractor, IntensityFeatureExtractor, DistanceTransformFeatureExtractor, GlobalFeatureExtractor, DerivedFeatureCalculator, HybridDerivedFeatureCalculator, RegionDerivedFeatureCalculator
 
 LABEL_IMAGE = np.zeros((100, 100), dtype=np.uint16)
 LABEL_IMAGE[15:45, 15:45] = 1
@@ -326,7 +326,7 @@ def test_derived_feature_convexity():
 
     extractor = SKRegionPropFeatureExtractor(
         features=['perimeter', 'convex_perimeter'])
-    feature_calculator = RCODerivedFeatureCalculator(['convexity'])
+    feature_calculator = DerivedFeatureCalculator(['convexity'])
 
     labels = LABEL_IMAGE.copy()
     # remove a quarter of the square label --> concave
@@ -359,7 +359,7 @@ def test_derived_feature_nuclei_fraction():
                              'feature_value'
                          ])
 
-    feature_calculator = CODerivedFeatureCalculator(['nuclei_fraction'])
+    feature_calculator = RegionDerivedFeatureCalculator(['nuclei_fraction'])
 
     derived_props = feature_calculator(props)
     derived_props = derived_props.set_index(
@@ -378,7 +378,7 @@ def test_derived_feature_form_factor():
     labels[0:40, 0:40] = 1
 
     extractor = SKRegionPropFeatureExtractor(features=['area', 'perimeter'])
-    feature_calculator = RCODerivedFeatureCalculator(['form_factor'])
+    feature_calculator = DerivedFeatureCalculator(['form_factor'])
 
     props = extractor({'object': labels}, None)
     derived_props = feature_calculator(props)
@@ -408,7 +408,7 @@ def test_global_feature_extractor():
         ],
         calculators=[
             HybridDerivedFeatureCalculator(['mass_displacement']),
-            RCODerivedFeatureCalculator(['convexity'])
+            DerivedFeatureCalculator(['convexity'])
         ])
 
     props = extractor(labels, channels)
