@@ -1,8 +1,9 @@
 import pytest
 import numpy as np
 import itertools
+import pandas as pd
 
-from improc.regionprops import BaseFeatureExtractor, SKRegionPropFeatureExtractor, QuantilesFeatureExtractor, IntensityFeatureExtractor, DerivedFeatureCalculator, DistanceTransformFeatureExtractor, GlobalFeatureExtractor
+from improc.regionprops import BaseFeatureExtractor, SKRegionPropFeatureExtractor, QuantilesFeatureExtractor, IntensityFeatureExtractor, DistanceTransformFeatureExtractor, GlobalFeatureExtractor, RCODerivedFeatureCalculator, HybridDerivedFeatureCalculator, CODerivedFeatureCalculator
 
 LABEL_IMAGE = np.zeros((100, 100), dtype=np.uint16)
 LABEL_IMAGE[15:45, 15:45] = 1
@@ -16,6 +17,56 @@ INTENSITY_IMAGE[80:90, 10:30] = 223
 
 AREAS = [30 * 30, 40 * 40, 10 * 20]
 MEANS = [45, 72, 223]
+
+# yapf: disable
+PROPS = pd.DataFrame(data=
+        [['ch1','obj',1,'centroid-0',20.0],
+         ['ch1','obj',1,'centroid-1',20.0],
+         ['ch1','obj',1,'weighted_centroid-0',10.0],
+         ['ch1','obj',1,'weighted_centroid-1',20.0],
+         ['ch1','obj',1,'perimeter',160.0],
+         ['ch1','obj',1,'area',1681.0],
+         ['ch1','obj',2,'centroid-0',80.0],
+         ['ch1','obj',2,'centroid-1',80.0],
+         ['ch1','obj',2,'weighted_centroid-0',80.0],
+         ['ch1','obj',2,'weighted_centroid-1',90.0],
+         ['ch1','obj',2,'perimeter',156.0],
+         ['ch1','obj',2,'area',1600.0],
+         ['ch2','obj',1,'centroid-0',20.0],
+         ['ch2','obj',1,'centroid-1',20.0],
+         ['ch2','obj',1,'weighted_centroid-0',10.0],
+         ['ch2','obj',1,'weighted_centroid-1',20.0],
+         ['ch2','obj',1,'perimeter',160.0],
+         ['ch2','obj',1,'area',1681.0],
+         ['ch2','obj',2,'centroid-0',80.0],
+         ['ch2','obj',2,'centroid-1',80.0],
+         ['ch2','obj',2,'weighted_centroid-0',80.0],
+         ['ch2','obj',2,'weighted_centroid-1',90.0],
+         ['ch2','obj',2,'perimeter',156.0],
+         ['ch2','obj',2,'area',1600.0],],
+        columns=['channel','region','object_id','feature_name', 'feature_value'])
+
+PROPS_SHARED_MORPH = pd.DataFrame(data=
+        [['na','obj',1,'centroid-0',20.0],
+         ['na','obj',1,'centroid-1',20.0],
+         ['ch1','obj',1,'weighted_centroid-0',10.0],
+         ['ch1','obj',1,'weighted_centroid-1',20.0],
+         ['na','obj',1,'perimeter',160.0],
+         ['na','obj',1,'area',1681.0],
+         ['na','obj',2,'centroid-0',80.0],
+         ['na','obj',2,'centroid-1',80.0],
+         ['ch1','obj',2,'weighted_centroid-0',80.0],
+         ['ch1','obj',2,'weighted_centroid-1',90.0],
+         ['na','obj',2,'perimeter',156.0],
+         ['na','obj',2,'area',1600.0],
+         ['ch2','obj',1,'weighted_centroid-0',10.0],
+         ['ch2','obj',1,'weighted_centroid-1',20.0],
+         ['ch2','obj',2,'weighted_centroid-0',80.0],
+         ['ch2','obj',2,'weighted_centroid-1',90.0],],
+        columns=['channel','region','object_id','feature_name', 'feature_value'])
+
+
+# yapf: enable
 
 
 # yapf: disable
@@ -130,25 +181,25 @@ def test_skregionprops_feature_extractor(labels, channels, features, spacing,
 
 # yapf: disable
 @pytest.mark.parametrize("labels,channels,quantiles,expected_rows", [
-                                         ({'object':LABEL_IMAGE}, {'ch1':INTENSITY_IMAGE},[0.,0.25,0.5,0.75,1.0], {('q0.000',1):45,
-                                                                                                                   ('q0.250',1):45,
-                                                                                                                   ('q0.500',1):45,
-                                                                                                                   ('q0.750',1):45,
-                                                                                                                   ('q1.000',1):45,
-                                                                                                                   ('q0.000',2):72,
-                                                                                                                   ('q0.250',2):72,
-                                                                                                                   ('q0.500',2):72,
-                                                                                                                   ('q0.750',2):72,
-                                                                                                                   ('q1.000',2):72,
-                                                                                                                   ('q0.000',3):223,
-                                                                                                                   ('q0.250',3):223,
-                                                                                                                   ('q0.500',3):223,
-                                                                                                                   ('q0.750',3):223,
-                                                                                                                   ('q1.000',3):223,
+                                         ({'object':LABEL_IMAGE}, {'ch1':INTENSITY_IMAGE},[0.,0.25,0.5,0.75,1.0], {('q0_000',1):45,
+                                                                                                                   ('q0_250',1):45,
+                                                                                                                   ('q0_500',1):45,
+                                                                                                                   ('q0_750',1):45,
+                                                                                                                   ('q1_000',1):45,
+                                                                                                                   ('q0_000',2):72,
+                                                                                                                   ('q0_250',2):72,
+                                                                                                                   ('q0_500',2):72,
+                                                                                                                   ('q0_750',2):72,
+                                                                                                                   ('q1_000',2):72,
+                                                                                                                   ('q0_000',3):223,
+                                                                                                                   ('q0_250',3):223,
+                                                                                                                   ('q0_500',3):223,
+                                                                                                                   ('q0_750',3):223,
+                                                                                                                   ('q1_000',3):223,
                                                                                                                   }),
-                                         (None, {'ch1':INTENSITY_IMAGE},[0.,0.5,1.0], {('q0.000',1):INTENSITY_IMAGE.min(),
-                                                                                       ('q0.500',1):np.median(INTENSITY_IMAGE),
-                                                                                       ('q1.000',1):INTENSITY_IMAGE.max(),
+                                         (None, {'ch1':INTENSITY_IMAGE},[0.,0.5,1.0], {('q0_000',1):INTENSITY_IMAGE.min(),
+                                                                                       ('q0_500',1):np.median(INTENSITY_IMAGE),
+                                                                                       ('q1_000',1):INTENSITY_IMAGE.max(),
                                                                                       }),
                                     ])
 # yapf: enable
@@ -234,79 +285,92 @@ def test_distance_transform_feature_extractor():
 
 
 def test_derived_feature_mass_displacement():
-    ''''''
 
-    mask = np.zeros((101, 101), dtype=np.uint8)
-    mask[0:41, 0:41] = 1
-    mask[61:, 61:] = 2
+    feature_calculator = HybridDerivedFeatureCalculator(['mass_displacement'])
 
-    img = np.zeros((101, 101), dtype=np.uint16)
-    img[0:21, 0:41] = 25
-    img[61:, 81:] = 25
-
-    extractor = SKRegionPropFeatureExtractor(
-        features=['area', 'perimeter', 'centroid', 'weighted_centroid'])
-    feature_calculator = DerivedFeatureCalculator(['mass_displacement'])
-
-    props = extractor({'obj': mask}, {'ch1': img, 'ch2': img})
-    props = feature_calculator(props)
-    props = props.set_index(['feature_name', 'object_id', 'channel'])
+    derived_props = feature_calculator(PROPS)
+    derived_props = derived_props.set_index(
+        ['feature_name', 'object_id', 'channel'])
 
     np.testing.assert_almost_equal(
-        props.loc[('mass_displacement', 1, 'ch1'), 'feature_value'], 10)
+        derived_props.loc[('mass_displacement', 1, 'ch1'), 'feature_value'],
+        10)
     np.testing.assert_almost_equal(
-        props.loc[('mass_displacement', 2, 'ch1'), 'feature_value'], 10)
+        derived_props.loc[('mass_displacement', 2, 'ch1'), 'feature_value'],
+        10)
     np.testing.assert_almost_equal(
-        props.loc[('mass_displacement', 1, 'ch2'), 'feature_value'], 10)
+        derived_props.loc[('mass_displacement', 1, 'ch2'), 'feature_value'],
+        10)
     np.testing.assert_almost_equal(
-        props.loc[('mass_displacement', 2, 'ch2'), 'feature_value'], 10)
+        derived_props.loc[('mass_displacement', 2, 'ch2'), 'feature_value'],
+        10)
 
-    extractor_morph = SKRegionPropFeatureExtractor(
-        features=['area', 'perimeter', 'centroid'])
-    extractor_intensity = SKRegionPropFeatureExtractor(
-        features=['weighted_centroid'])
-    props = extractor_morph({'obj': mask}, None)
-    props = props.append(
-        extractor_intensity({'obj': mask}, {
-            'ch1': img,
-            'ch2': img
-        }))
-    props = feature_calculator(props)
-    props = props.set_index(['feature_name', 'object_id', 'channel'])
+    derived_props = feature_calculator(PROPS_SHARED_MORPH)
+    derived_props = derived_props.set_index(
+        ['feature_name', 'object_id', 'channel'])
 
     np.testing.assert_almost_equal(
-        props.loc[('mass_displacement', 1, 'ch1'), 'feature_value'], 10)
+        derived_props.loc[('mass_displacement', 1, 'ch1'), 'feature_value'],
+        10)
     np.testing.assert_almost_equal(
-        props.loc[('mass_displacement', 2, 'ch1'), 'feature_value'], 10)
+        derived_props.loc[('mass_displacement', 2, 'ch1'), 'feature_value'],
+        10)
     np.testing.assert_almost_equal(
-        props.loc[('mass_displacement', 1, 'ch2'), 'feature_value'], 10)
+        derived_props.loc[('mass_displacement', 1, 'ch2'), 'feature_value'],
+        10)
     np.testing.assert_almost_equal(
-        props.loc[('mass_displacement', 2, 'ch2'), 'feature_value'], 10)
+        derived_props.loc[('mass_displacement', 2, 'ch2'), 'feature_value'],
+        10)
 
 
 def test_derived_feature_convexity():
     ''''''
 
     extractor = SKRegionPropFeatureExtractor(
-        features=['area', 'perimeter', 'convex_area', 'convex_perimeter'])
-    feature_calculator = DerivedFeatureCalculator(['convexity'])
+        features=['perimeter', 'convex_perimeter'])
+    feature_calculator = RCODerivedFeatureCalculator(['convexity'])
 
     labels = LABEL_IMAGE.copy()
-    labels[40:61, 50:
-           71] = 0  # remove a quarter of the square label --> concave
+    # remove a quarter of the square label --> concave
+    labels[40:61, 50:71] = 0
 
     props = extractor({'object': labels}, None)
-    props = feature_calculator(props)
-    props = props.set_index(['feature_name', 'object_id'])
+    derived_props = feature_calculator(props)
+    derived_props = derived_props.set_index(['feature_name', 'object_id'])
 
     np.testing.assert_almost_equal(
-        props.loc[('convexity', 1), 'feature_value'], 1)
-    np.testing.assert_almost_equal(props.loc[('convexity',
-                                              2), 'feature_value'],
+        derived_props.loc[('convexity', 1), 'feature_value'], 1)
+
+    np.testing.assert_almost_equal(derived_props.loc[('convexity',
+                                                      2), 'feature_value'],
                                    (156 - 40 + np.sqrt(400 + 400)) / 156,
                                    decimal=3)
+
     np.testing.assert_almost_equal(
-        props.loc[('convexity', 3), 'feature_value'], 1)
+        derived_props.loc[('convexity', 3), 'feature_value'], 1)
+
+
+def test_derived_feature_nuclei_fraction():
+    ''''''
+    props = pd.DataFrame(data=[['na', 'cell', 1, 'volume', 20.0],
+                               ['na', 'nuclei', 1, 'volume', 10.0],
+                               ['na', 'cell', 2, 'volume', 20.0],
+                               ['na', 'nuclei', 2, 'volume', 5.0]],
+                         columns=[
+                             'channel', 'region', 'object_id', 'feature_name',
+                             'feature_value'
+                         ])
+
+    feature_calculator = CODerivedFeatureCalculator(['nuclei_fraction'])
+
+    derived_props = feature_calculator(props)
+    derived_props = derived_props.set_index(
+        ['feature_name', 'object_id', 'channel'])
+
+    np.testing.assert_almost_equal(
+        derived_props.loc[('nuclei_fraction', 1, 'na'), 'feature_value'], 0.5)
+    np.testing.assert_almost_equal(
+        derived_props.loc[('nuclei_fraction', 2, 'na'), 'feature_value'], 0.25)
 
 
 def test_derived_feature_form_factor():
@@ -316,14 +380,14 @@ def test_derived_feature_form_factor():
     labels[0:40, 0:40] = 1
 
     extractor = SKRegionPropFeatureExtractor(features=['area', 'perimeter'])
-    feature_calculator = DerivedFeatureCalculator(['form_factor'])
+    feature_calculator = RCODerivedFeatureCalculator(['form_factor'])
 
     props = extractor({'object': labels}, None)
-    props = feature_calculator(props)
-    props = props.set_index(['feature_name', 'object_id'])
+    derived_props = feature_calculator(props)
+    derived_props = derived_props.set_index(['feature_name', 'object_id'])
 
     np.testing.assert_almost_equal(
-        props.loc[('form_factor', 1), 'feature_value'],
+        derived_props.loc[('form_factor', 1), 'feature_value'],
         4 * np.pi * 1600 / (4 * 39)**2)
 
 
@@ -345,11 +409,22 @@ def test_global_feature_extractor():
             SKRegionPropFeatureExtractor(features=['weighted_centroid'])
         ],
         calculators=[
-            DerivedFeatureCalculator(['mass_displacement']),
-            DerivedFeatureCalculator(['convexity'])
+            HybridDerivedFeatureCalculator(['mass_displacement']),
+            RCODerivedFeatureCalculator(['convexity'])
         ])
 
     props = extractor(labels, channels)
 
-    assert len(props) == (5 * 3 * 3 + 2 * 3 * 3 * 3 + 1 * 3 * 3 * 3 +
-                          1 * 3 * 3)
+    with pd.option_context('display.max_rows', None, 'display.max_columns',
+                           None):
+        print(props)
+    print(len(props))
+    print((5 * 3 * 3 + 2 * 3 * 3 * 3 + 1 * 3 * 3 * 3 + 1 * 3 * 3))
+
+    n_morph_features = 5 * 3 * 3
+    n_wg_centroid_features = 2 * 3 * 3 * 3
+    n_mass_disp = 3 * 3 * 3
+    n_convexity = 3 * 3
+    expected_n_features = n_morph_features + n_wg_centroid_features + n_mass_disp + n_convexity
+
+    assert len(props) == expected_n_features

@@ -3,7 +3,6 @@ import itertools
 import inspect
 import pandas as pd
 import numpy as np
-from functools import partial
 
 from skimage.measure import regionprops_table, perimeter
 from scipy.ndimage.measurements import labeled_comprehension
@@ -112,9 +111,7 @@ class BaseFeatureExtractor():
     @abc.abstractmethod
     def _extract_features(self, label, intensity):
         '''Method to extract feature for the given label,intensity_image pair.
-        Is expected to return a dict with features as keys and 1 dimensional 
-        arrays containing feature value for each label as values. The returned 
-        dict should also contains the key "label" with label ids as values.
+        Is expected to return a dict with the followng format:
         
         example:
         {'label':[1,2,3],
@@ -145,7 +142,7 @@ class QuantilesFeatureExtractor(BaseFeatureExtractor):
                           axis=-1)
 
         props = {
-            'q{:.3f}'.format(q): qv
+            'q{:.3f}'.format(q).replace('.', '_'): qv
             for q, qv in zip(self.quantiles, q_vals)
         }
         props['label'] = unique_l
@@ -406,64 +403,63 @@ class SKRegionPropFeatureExtractor(BaseFeatureExtractor):
         return props
 
 
-class DerivedFeatureCalculator():
-    '''Compute derived features from a dataframe of existing features'''
+class BasedDerivedFeatureCalculator():
+    '''Base class to compute derived features from a dataframe of existing features.
+    
+    static methods with featurename as arguments.'''
+    @property
+    @classmethod
+    @abc.abstractmethod
+    def grouping(cls):
+        '''List of keys to groupby props DataFrame to compute derived features'''
+        return NotImplementedError
 
-    # TODO error/warning if required based feature not found
-    #   how to handle aggregated props where only some groups have the reuired features?
-    # TODO handle 3D derived features (name mapping?, area-->volume, etc)
-    # TODO cell profiler compactness: derived from image moments, see centrosome/cpmorphology.py
+    def __init__(self, features, label_targets='all', channel_targets='all'):
 
-    _implemented_features = {'mass_displacement', 'convexity', 'form_factor'}
-
-    # morphologial base features that might not be associated with a channel
-    # e.g. 1 "centroid" combined with multiple "weighted_centroid" to calculate mass displacement
-    _morphologial_shared_base_features = ['centroid']
-    _regex_shared_base_features = '|'.join(_morphologial_shared_base_features)
-
-    def __init__(self,
-                 label_targets='all',
-                 channel_targets='all',
-                 features=['form_factor']):
-
-        for f in set(features) - self._implemented_features:
-            raise NotImplementedError('feature {} not implemented'.format(f))
+        for f in features:
+            fun = getattr(self, f, None)
+            if fun is None:
+                raise NotImplementedError(
+                    'feature {} not implemented'.format(f))
 
         self.features = features
         self.label_targets = label_targets
         self.channel_targets = channel_targets
+        self.arg_keys = [
+            a for a in ['channel', 'region', 'object_id']
+            if a not in self.grouping
+        ] + ['feature_name']
 
     def __call__(self, props):
+
         props = props.set_index(['channel', 'region',
                                  'object_id']).sort_index()
 
-        new_props = props.copy()
         if self.label_targets != 'all':
-            new_props = new_props.loc(axis=0)[:, self.label_targets]
+            props = props.loc(axis=0)[:, self.label_targets]
 
         if self.channel_targets != 'all':
-            new_props = new_props.loc(axis=0)[self.channel_targets + ['na']]
+            props = props.loc(axis=0)[self.channel_targets + ['na']]
 
-        props = props.append(
-            new_props.groupby(['channel', 'region', 'object_id']).apply(
-                partial(self._compute_subdf_features, props=props)))
+        derived_props = props.groupby(self.grouping).apply(
+            self._compute_subdf_features, props=props)
 
-        return props.reset_index()
+        return derived_props.droplevel(-1).reset_index()
+
+    def _get_arg_value(self, arg, subdf):
+        '''Returns '''
+
+        rows_masks = [
+            subdf[k].str.startswith(a)
+            for k, a in zip(self.arg_keys, arg.split('__'))
+        ]
+        rows_mask = np.prod(rows_masks, axis=0).astype(bool)
+
+        return subdf[rows_mask].feature_value.values.squeeze()
 
     def _compute_subdf_features(self, subdf, props):
-        # add pure morphological features without assigned channel to subdf if available and needed
-        idx = subdf.index[0]
-        if idx[0] != 'na':
 
-            try:
-                # channel='na', same region and object_id as subdf
-                shared_base_props = props.loc(axis=0)[('na', ) + idx[1:]]
-                shared_base_props = shared_base_props[
-                    shared_base_props.feature_name.str.contains(
-                        self._regex_shared_base_features)]
-                subdf = subdf.append(shared_base_props)
-            except Exception as e:
-                pass
+        subdf = subdf.reset_index()
 
         derived_features = []
 
@@ -476,18 +472,15 @@ class DerivedFeatureCalculator():
             fun_args = inspect.getfullargspec(fun).args
 
             # get required base features' value
-            kwargs = {
-                arg: subdf[subdf.feature_name.str.startswith(
-                    arg)].feature_value.values.squeeze()
-                for arg in fun_args
-            }
+            kwargs = {arg: self._get_arg_value(arg, subdf) for arg in fun_args}
 
             try:
                 feature_value = fun(**kwargs)
             except Exception as e:
                 feature_value = None
 
-            if feature_value or isinstance(feature_value, (float, int)):
+            if feature_value is not None and isinstance(
+                    feature_value, (float, int)):
                 derived_features.append({
                     'feature_name': feature,
                     'feature_value': feature_value
@@ -495,11 +488,44 @@ class DerivedFeatureCalculator():
 
         return pd.DataFrame(derived_features)
 
+
+class HybridDerivedFeatureCalculator(BasedDerivedFeatureCalculator):
+    '''Computes features that depends on both morphological and intensity features'''
+
+    grouping = ['channel', 'region', 'object_id']
+
+    def _add_pure_morph_props(self, subdf, props):
+        '''Adds pure morphological features without assigned channel to df 
+        if available in props.'''
+
+        regions = subdf.index.get_level_values(1).unique()
+        object_ids = subdf.index.get_level_values(2).unique()
+
+        if 'region' in self.grouping and subdf.index[0][0] != 'na':
+            try:
+                subdf = subdf.append(
+                    props.loc(axis=0)['na', regions, object_ids])
+            except KeyError as e:
+                pass
+
+        return subdf
+
+    def _compute_subdf_features(self, subdf, props):
+
+        subdf = self._add_pure_morph_props(subdf, props)
+        return super()._compute_subdf_features(subdf, props)
+
     @staticmethod
     def mass_displacement(centroid, weighted_centroid):
         '''distance between the center of mass of the binary image and of the intensity image.'''
 
         return np.linalg.norm(centroid - weighted_centroid)
+
+
+class RCODerivedFeatureCalculator(BasedDerivedFeatureCalculator):
+    '''Goupby region,channel,object and compute derived features'''
+
+    grouping = ['channel', 'region', 'object_id']
 
     @staticmethod
     def convexity(perimeter, convex_perimeter):
@@ -513,6 +539,19 @@ class DerivedFeatureCalculator():
         aka area / area of disc having same perimeter'''
 
         return 4 * np.pi * area / perimeter**2
+
+
+class CODerivedFeatureCalculator(BasedDerivedFeatureCalculator):
+    '''Goupby channel,object and compute derived features'''
+
+    grouping = ['channel', 'object_id']
+
+    @staticmethod
+    def nuclei_fraction(cell__volume, nuclei__volume):
+        '''4*π*Area/Perimeter^2
+        aka area / area of disc having same perimeter'''
+
+        return nuclei__volume / cell__volume
 
 
 class GlobalFeatureExtractor():
@@ -530,6 +569,6 @@ class GlobalFeatureExtractor():
             props = props.append(extractor(labels, channels))
 
         for calculator in self.calculators:
-            props = calculator(props)
+            props = props.append(calculator(props))
 
         return props
