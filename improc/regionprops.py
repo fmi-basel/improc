@@ -444,7 +444,10 @@ class BasedDerivedFeatureCalculator():
         derived_props = props.groupby(self.grouping).apply(
             self._compute_subdf_features, props=props)
 
-        return derived_props.droplevel(-1).reset_index()
+        if len(derived_props) > 0:
+            derived_props = derived_props.droplevel(-1).reset_index()
+
+        return derived_props
 
     def _get_arg_value(self, arg, subdf):
         '''Returns '''
