@@ -1,7 +1,6 @@
 import re
 import parse
 from glob import glob
-from functools import lru_cache
 from skimage.io import imread, imsave
 from PIL import Image
 import pandas as pd
@@ -134,7 +133,6 @@ class LSCAccessor:
             lambda x: x.pattern.format(**x.to_dict()), axis=1)
 
     @staticmethod
-    @lru_cache(maxsize=0)
     def read_img(path):
         return imread(path)
 
@@ -149,11 +147,6 @@ class LSCAccessor:
         else:
             raise NotImplementedError(
                 'Reading .{} files not implemented'.format(ext))
-
-    @classmethod
-    def set_img_cache_size(cls, cache_size):
-        cls.read_img = staticmethod(
-            lru_cache(maxsize=cache_size)(cls.read_img.__wrapped__))
 
 
 def register_lsc_accessor():
