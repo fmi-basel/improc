@@ -39,9 +39,15 @@ def parse_collection(pattern, keys):
         **pp.named
     } for pp in parsed_paths if pp]).set_index(keys).sort_index())
 
-    if df.index.duplicated().sum():
+    duplicated_index_mask = df.index.duplicated()
+    if duplicated_index_mask.sum():
+
+        duplicated_index = df[duplicated_index_mask].index
+        example = df.loc(axis=0)[duplicated_index[0]].to_string()
+
         raise ValueError(
-            'Selected keys {} do not form a unique index'.format(keys))
+            'Selected keys {} do not form a unique index. e.g. \n{}'.format(
+                keys, example))
 
     return df
 
