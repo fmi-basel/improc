@@ -18,6 +18,7 @@ def parse_collection(pattern, keys):
     '/dir1/dir2/dir3/{channel}/T{time:04d}.{ext}'
     '''
 
+    pattern = os.path.normpath(pattern)
     compiled_pattern = parse.compile(pattern)
     paths = sorted(glob(re.sub('{.*?}', '*', pattern)))
 
@@ -26,8 +27,9 @@ def parse_collection(pattern, keys):
         raise ValueError(
             'basedir key is reserved and cannot be used in pattern: {}'.format(
                 pattern))
+
     basedir = os.path.dirname(pattern.split('{', 1)[0])
-    pattern = re.sub(basedir, '{basedir}', pattern)
+    pattern = pattern.replace(basedir, '{basedir}')
 
     # apply pattern to all paths that matched
     parsed_paths = [compiled_pattern.parse(p) for p in paths]
