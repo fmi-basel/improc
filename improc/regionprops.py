@@ -537,11 +537,29 @@ class DerivedFeatureCalculator(BasedDerivedFeatureCalculator):
         return convex_perimeter / perimeter
 
     @staticmethod
+    def roughness(perimeter, convex_perimeter):
+        '''Inverse of convexity: perimeter / convex hull perimeter'''
+
+        return perimeter / convex_perimeter
+
+    @staticmethod
     def form_factor(area, perimeter):
         '''4*π*Area/Perimeter^2
         aka area / area of disc having same perimeter'''
 
         return 4 * np.pi * area / perimeter**2
+
+    @staticmethod
+    def compactness(area, perimeter):
+        '''Alias for form_factor'''
+
+        return DerivedFeatureCalculator.form_factor(area, perimeter)
+
+    @staticmethod
+    def circularity(area, convex_perimeter):
+        '''Ratio of area to the area of a circle with the same convex perimeter'''
+
+        return area / (np.square(convex_perimeter) / (4 * np.pi))
 
 
 class RegionDerivedFeatureCalculator(BasedDerivedFeatureCalculator):

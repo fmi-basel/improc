@@ -322,11 +322,11 @@ def test_derived_feature_mass_displacement():
 
 
 def test_derived_feature_convexity():
-    ''''''
+    '''Test convexity feature and its inverse roughness'''
 
     extractor = SKRegionPropFeatureExtractor(
         features=['perimeter', 'convex_perimeter'])
-    feature_calculator = DerivedFeatureCalculator(['convexity'])
+    feature_calculator = DerivedFeatureCalculator(['convexity', 'roughness'])
 
     labels = LABEL_IMAGE.copy()
     # remove a quarter of the square label --> concave
@@ -346,6 +346,17 @@ def test_derived_feature_convexity():
 
     np.testing.assert_almost_equal(
         derived_props.loc[('convexity', 3), 'feature_value'], 1)
+
+    np.testing.assert_almost_equal(
+        derived_props.loc[('roughness', 1), 'feature_value'], 1)
+
+    np.testing.assert_almost_equal(derived_props.loc[('roughness',
+                                                      2), 'feature_value'],
+                                   156 / (156 - 40 + np.sqrt(400 + 400)),
+                                   decimal=3)
+
+    np.testing.assert_almost_equal(
+        derived_props.loc[('roughness', 3), 'feature_value'], 1)
 
 
 def test_derived_feature_nuclei_fraction():
@@ -372,13 +383,14 @@ def test_derived_feature_nuclei_fraction():
 
 
 def test_derived_feature_form_factor():
-    ''''''
+    '''Test form_factor (and compactness alias) feature calculation'''
 
     labels = np.zeros((101, 101), dtype=np.uint8)
     labels[0:40, 0:40] = 1
 
     extractor = SKRegionPropFeatureExtractor(features=['area', 'perimeter'])
-    feature_calculator = DerivedFeatureCalculator(['form_factor'])
+    feature_calculator = DerivedFeatureCalculator(
+        ['form_factor', 'compactness'])
 
     props = extractor({'object': labels}, None)
     derived_props = feature_calculator(props)
@@ -387,6 +399,29 @@ def test_derived_feature_form_factor():
     np.testing.assert_almost_equal(
         derived_props.loc[('form_factor', 1), 'feature_value'],
         4 * np.pi * 1600 / (4 * 39)**2)
+
+    np.testing.assert_almost_equal(
+        derived_props.loc[('compactness', 1), 'feature_value'],
+        4 * np.pi * 1600 / (4 * 39)**2)
+
+
+def test_derived_feature_circularity():
+    ''''''
+
+    extractor = SKRegionPropFeatureExtractor(
+        features=['area', 'convex_perimeter'])
+    feature_calculator = DerivedFeatureCalculator(['circularity'])
+
+    labels = np.zeros((100, 100), dtype=np.uint16)
+    labels[15:45, 15:45] = 1
+
+    props = extractor({'object': labels}, None)
+    derived_props = feature_calculator(props)
+    derived_props = derived_props.set_index(['feature_name', 'object_id'])
+
+    np.testing.assert_almost_equal(
+        derived_props.loc[('circularity', 1), 'feature_value'],
+        30 * 30 / (np.square(4 * 29) / (4 * np.pi)))
 
 
 def test_global_feature_extractor():
