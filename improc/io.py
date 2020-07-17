@@ -6,8 +6,8 @@ from PIL import Image
 import pandas as pd
 import numpy as np
 import os
+import warnings
 
-# TODO consider using xarray dataset --> build xarray + set xarray accessor instead df/series (directly usable with holoviews)
 # TODO add logger
 
 
@@ -95,7 +95,12 @@ class LSCAccessor:
             for p, ext in zip(self.path, self._obj.ext)
         ]
 
-    def write(self, data, index=True, compressed=False):
+    def write(self,
+              data,
+              index=True,
+              compressed=False,
+              imagej=False,
+              compress=0):
 
         # if data is not a list, we assume it is because the is only one item
         if not isinstance(data, list):
@@ -111,6 +116,11 @@ class LSCAccessor:
             elif ext == 'tif' or ext == 'stk' or ext == 'png' or ext == 'bmp':
 
                 if compressed:
+
+                    warnings.warn(
+                        'compressed flag will be removed in future. Use compress=[0,9] instead.'
+                    )
+
                     if d.ndim == 2:  # 2D image
                         d = d[None]
 
@@ -122,7 +132,7 @@ class LSCAccessor:
                             Image.fromarray(img_slice) for img_slice in d[1:]
                         ])
                 else:
-                    imsave(p, d)
+                    imsave(p, d, imagej=imagej, compress=compress)
             elif ext == 'npz':
                 # save binary comrpessed numpy array
                 out_dir = os.path.dirname(p)
