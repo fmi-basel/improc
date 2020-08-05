@@ -9,6 +9,7 @@ import os
 import warnings
 
 # TODO add logger
+# TODO add data collection:=dc alias
 
 
 def parse_collection(pattern, keys):
@@ -115,7 +116,7 @@ class LSCAccessor:
 
             if ext == 'csv':
                 d.to_csv(p, index=index)
-            elif ext == 'tif' or ext == 'stk' or ext == 'png' or ext == 'bmp':
+            elif ext in ['tif', 'stk', 'png', 'bmp', 'jpg']:
 
                 if compressed:
 
@@ -156,7 +157,7 @@ class LSCAccessor:
 
     @classmethod
     def map_read_fct(cls, p, ext):
-        if ext == 'tif' or ext == 'stk' or ext == 'png' or ext == 'bmp':
+        if ext in ['tif', 'stk', 'png', 'bmp', 'jpg']:
             return cls.read_img(p)
         elif ext == 'csv':
             return pd.read_csv(p)
