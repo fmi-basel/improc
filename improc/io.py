@@ -56,7 +56,7 @@ def parse_collection(pattern, keys):
 
 
 # ~ @pd.api.extensions.register_series_accessor('lsc')
-class LSCAccessor:
+class DCAccessor:
     '''Adds cached read/write accessors to pandas series representing lightsheet items.'''
     def __init__(self, pandas_obj):
         if isinstance(pandas_obj, pd.Series):
@@ -89,8 +89,8 @@ class LSCAccessor:
 
     @classmethod
     def register(cls):
-        pd.api.extensions.register_series_accessor('lsc')(cls)
-        pd.api.extensions.register_dataframe_accessor('lsc')(cls)
+        pd.api.extensions.register_series_accessor('dc')(cls)
+        pd.api.extensions.register_dataframe_accessor('dc')(cls)
 
     def read(self):
         return [
@@ -168,6 +168,9 @@ class LSCAccessor:
                 'Reading .{} files not implemented'.format(ext))
 
 
-def register_lsc_accessor():
-    pd.api.extensions.register_series_accessor('lsc')(LSCAccessor)
-    pd.api.extensions.register_dataframe_accessor('lsc')(LSCAccessor)
+# lightsheet collection (LSC) accessor alias for backward compatiblity
+class LSCAccessor(DCAccessor):
+    @classmethod
+    def register(cls):
+        pd.api.extensions.register_series_accessor('lsc')(cls)
+        pd.api.extensions.register_dataframe_accessor('lsc')(cls)
