@@ -135,7 +135,14 @@ class DCAccessor:
                             Image.fromarray(img_slice) for img_slice in d[1:]
                         ])
                 else:
-                    imsave(p, d, imagej=imagej, compress=compress)
+                    if imagej:
+                        imsave(p, d, imagej=imagej, compress=compress)
+                    else:
+                        # NOTE:
+                        # passing imagej flag (even False) probably force a different backend
+                        # can throw "data too large for standard TIFF file" error
+                        imsave(p, d, compress=compress)
+
             elif ext == 'npz':
                 # save binary comrpessed numpy array
                 out_dir = os.path.dirname(p)
