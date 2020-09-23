@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import os
 import warnings
+from concurrent.futures import ThreadPoolExecutor
 
 # TODO add logger
 # TODO add data collection:=dc alias
@@ -93,10 +94,10 @@ class DCAccessor:
         pd.api.extensions.register_dataframe_accessor('dc')(cls)
 
     def read(self):
-        return [
-            self.map_read_fct(p, ext)
-            for p, ext in zip(self.path, self._obj.ext)
-        ]
+
+        with ThreadPoolExecutor() as threads:
+            return list(
+                threads.map(self.map_read_fct, self.path, self._obj.ext))
 
     def write(self,
               data,
