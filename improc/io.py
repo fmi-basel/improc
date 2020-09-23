@@ -136,12 +136,16 @@ class DCAccessor:
                         ])
                 else:
                     if imagej:
-                        imsave(p, d, imagej=imagej, compress=compress)
+                        imsave(p,
+                               d,
+                               imagej=imagej,
+                               compress=compress,
+                               check_contrast=False)
                     else:
                         # NOTE:
                         # passing imagej flag (even False) probably force a different backend
                         # can throw "data too large for standard TIFF file" error
-                        imsave(p, d, compress=compress)
+                        imsave(p, d, compress=compress, check_contrast=False)
 
             elif ext == 'npz':
                 # save binary comrpessed numpy array
