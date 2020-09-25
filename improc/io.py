@@ -8,6 +8,7 @@ import numpy as np
 import os
 import warnings
 from concurrent.futures import ThreadPoolExecutor
+from collections.abc import Iterable
 
 # TODO add logger
 # TODO add data collection:=dc alias
@@ -70,23 +71,13 @@ class DCAccessor:
     def __getitem__(self, key):
         '''Returns a dataframe of requested index with all levels maintained, even if it has only one row'''
 
-        # TODO fix indexing with list for fir level only: df.lsc[['toto','tata']]
+        if isinstance(key, tuple):
+            key = tuple(k if isinstance(k, Iterable)
+                        and not isinstance(k, str) else [k] for k in key)
+        elif not isinstance(key, Iterable):
+            key = [key]
 
-        if isinstance(key, slice) or (isinstance(
-                key,
-            (list, tuple, np.ndarray)) and any(
-                [isinstance(k, (slice, list, tuple, np.ndarray))
-                 for k in key])):
-            return self._obj.loc(axis=0)[key]
-        else:
-            # prevent from returning a pd.Series or dropping index level
-            if isinstance(self._obj.index, pd.MultiIndex) and isinstance(
-                    key,
-                (list, tuple,
-                 np.ndarray)) and len(key) != len(self._obj.index.levels):
-                return self._obj.xs(key, drop_level=False)
-            else:
-                return self._obj.loc(axis=0)[[key]]
+        return self._obj.loc(axis=0)[key]
 
     @classmethod
     def register(cls):
