@@ -74,7 +74,7 @@ class DCAccessor:
         if isinstance(key, tuple):
             key = tuple(k if isinstance(k, Iterable)
                         and not isinstance(k, str) else [k] for k in key)
-        elif not isinstance(key, Iterable):
+        elif not (isinstance(key, Iterable) and not isinstance(key, str)):
             key = [key]
 
         return self._obj.loc(axis=0)[key]
