@@ -3,6 +3,11 @@ import numpy as np
 
 from skimage.filters import threshold_otsu, threshold_li, threshold_yen, threshold_triangle, threshold_minimum
 from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage import label as nd_label
+from scipy.ndimage.morphology import distance_transform_edt
+from skimage.segmentation import watershed
+from skimage.feature import peak_local_max
+from skimage.segmentation import relabel_sequential
 
 THRESHOLDS_METHODS = {
     'otsu': threshold_otsu,
@@ -58,3 +63,49 @@ def segment_from_projections(image,
         mask = np.logical_and(mask, np.expand_dims(mask_proj, axis=proj_axis))
 
     return mask
+
+
+def quantiles_refine_mask(img, mask, spacing, sigma=1, threshold=0.5):
+    '''Refines a binary mask by computing background/foreground levels from medians over existing mask.
+    
+    Can be used to refine a rough 3D mask obtained from max projections or locally over a cropped region.
+    
+    Args:
+        img: image to segment
+        mask: rough mask (e.g. obtained from max projections)
+        spacing: pixel/voxel size
+        sigma: image smoothing sigma before thresholding
+        threshold: relative threshold between median background and foreground levels
+    '''
+
+    spacing = np.broadcast_to(np.asarray(spacing), img.ndim)
+    img = gaussian_filter(img, sigma=sigma / spacing)
+
+    bg_level = np.quantile(img[~mask], 0.5)
+    fg_level = np.quantile(img[mask], 0.5)
+
+    return img > bg_level + (fg_level - bg_level) * threshold
+
+
+def label_with_watershed(mask, sigma=2, spacing=1):
+    '''Return labeled objects from mask while attempting to split touching objects
+    
+    Args:
+        mask: binary mask
+        sigma: distance smoothing sigma to find local maxima
+        spacing: pixel/voxel size
+    '''
+
+    spacing = np.broadcast_to(np.asarray(spacing), mask.ndim)
+    distance = distance_transform_edt(mask, sampling=spacing)
+
+    smoothed_distance = gaussian_filter(distance, sigma=sigma / spacing)
+
+    markers = peak_local_max(smoothed_distance,
+                             indices=False,
+                             labels=mask,
+                             exclude_border=False)
+    markers, _ = nd_label(markers)
+    labels = watershed(-distance, markers=markers, mask=mask)
+
+    return labels
