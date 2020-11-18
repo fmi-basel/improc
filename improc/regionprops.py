@@ -287,7 +287,8 @@ class SKRegionPropFeatureExtractor(BaseFeatureExtractor):
     _implemented_features = {
         'label', 'volume', 'area', 'centroid', 'weighted_centroid',
         'minor_axis_length', 'major_axis_length', 'eccentricity', 'perimeter',
-        'convex_area', 'convex_perimeter', 'solidity'
+        'convex_area', 'convex_perimeter', 'solidity', 'moments_hu',
+        'weighted_moments_hu'
     }
     _require_isotropic = {
         'minor_axis_length', 'major_axis_length', 'perimeter',
