@@ -19,28 +19,6 @@ def relabel_size_sorted(labels):
     return lut[labels]
 
 
-def find_objects_center(mask, image):
-    '''Returns the center of mass and bounding boxes sorted by size of all objects found in mask.'''
-
-    warnings.warn("find_objects_center, use find_objects_bb or regionprops",
-                  DeprecationWarning)
-
-    labels, _ = nd_label(mask)
-    labels = relabel_size_sorted(labels)
-
-    properties = regionprops(labels, image)
-    centers = [p.weighted_centroid for p in properties]
-
-    def format_bb(bb):
-        '''converts bbox list to tuple of slices'''
-        bb = np.array(bb).reshape(2, -1).T
-        return tuple(slice(start, stop) for start, stop in bb)
-
-    bboxes = [format_bb(p.bbox) for p in properties]
-
-    return centers, bboxes
-
-
 def find_objects_bb(mask):
     '''Returns the bounding boxes of objects found in mask, sorted by size.'''
 
@@ -48,3 +26,14 @@ def find_objects_bb(mask):
     labels = relabel_size_sorted(labels)
 
     return find_objects(labels)
+
+
+def size_opening(labels, threshold):
+    '''Removes labels with size less than 'threshold'
+    '''
+
+    lut, counts = np.unique(labels, return_counts=True)
+    lut[counts < threshold] = 0
+    labels = lut[labels]
+
+    return labels
