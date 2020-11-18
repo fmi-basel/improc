@@ -72,9 +72,11 @@ class DCAccessor:
         '''Returns a dataframe of requested index with all levels maintained, even if it has only one row'''
 
         if isinstance(key, tuple):
-            key = tuple(k if isinstance(k, Iterable)
-                        and not isinstance(k, str) else [k] for k in key)
-        elif not (isinstance(key, Iterable) and not isinstance(key, str)):
+            key = tuple(k if isinstance(k, (
+                Iterable, slice)) and not isinstance(k, str) else [k]
+                        for k in key)
+        elif not (isinstance(key,
+                             (Iterable, slice)) and not isinstance(key, str)):
             key = [key]
 
         return self._obj.loc(axis=0)[key]
