@@ -576,8 +576,7 @@ class RegionDerivedFeatureCalculator(BasedDerivedFeatureCalculator):
 
     @staticmethod
     def nuclei_fraction(cell__volume, nuclei__volume):
-        '''4*π*Area/Perimeter^2
-        aka area / area of disc having same perimeter'''
+        '''nuclei volume to cell volume ratio'''
 
         return nuclei__volume / cell__volume
 
