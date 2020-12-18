@@ -13,6 +13,6 @@ setup(name='improc',
           'tests',
       ]),
       install_requires=[
-          'numpy>=1.15.4', 'scikit-image', 'scipy', 'parse', 'vtk'
+          'numpy>=1.15.4', 'scikit-image', 'scipy', 'parse', 'vtk', 'czifile'
       ],
       zip_safe=False)
