@@ -49,7 +49,12 @@ def padded_crop(image, roi, mode='constant', constant_values=0):
         slice(max(0, s.start), min(dim, s.stop))
         for s, dim in zip(roi, image.shape))
 
-    return np.pad(image[roi], padding, mode, constant_values=constant_values)
+    if mode == 'constant':
+        kwargs = {'constant_values': constant_values}
+    else:
+        kwargs = {}
+
+    return np.pad(image[roi], padding, mode, **kwargs)
 
 
 def crop_object(images,

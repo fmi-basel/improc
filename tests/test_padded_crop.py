@@ -14,6 +14,6 @@ img = np.arange(100).reshape(10, 10)
 ])
 def test_padded_crop(roi, expected):
 
-    cropped_img = padded_crop(img, roi).squeeze()
+    cropped_img = padded_crop(img, roi, mode='reflect').squeeze()
 
     assert (cropped_img == expected).all()
