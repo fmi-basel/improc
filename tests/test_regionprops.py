@@ -147,18 +147,18 @@ def test_base_feature_extractor(label_targets, channel_targets, labels,
 
 # yapf: disable
 @pytest.mark.parametrize("labels,channels,features,spacing,physical_coords,expected_rows", [
-                                         ({'object':LABEL_IMAGE}, {'ch1':INTENSITY_IMAGE},['centroid'],2,False, {('centroid-0',1):29,
-                                                                                                                 ('centroid-1',1):29,
-                                                                                                                 ('centroid-0',2):59,
-                                                                                                                 ('centroid-1',2):69,
-                                                                                                                 ('centroid-0',3):84,
-                                                                                                                 ('centroid-1',3):19,}),
-                                         ({'object':LABEL_IMAGE}, {'ch1':INTENSITY_IMAGE},['centroid'],2,True,  {('centroid-0',1):29*2,
-                                                                                                                 ('centroid-1',1):29*2,
-                                                                                                                 ('centroid-0',2):59*2,
-                                                                                                                 ('centroid-1',2):69*2,
-                                                                                                                 ('centroid-0',3):84*2,
-                                                                                                                 ('centroid-1',3):19*2,}),
+                                         ({'object':LABEL_IMAGE}, {'ch1':INTENSITY_IMAGE},['centroid'],2,False, {('centroid-0',1):29.5,
+                                                                                                                 ('centroid-1',1):29.5,
+                                                                                                                 ('centroid-0',2):59.5,
+                                                                                                                 ('centroid-1',2):69.5,
+                                                                                                                 ('centroid-0',3):84.5,
+                                                                                                                 ('centroid-1',3):19.5,}),
+                                         ({'object':LABEL_IMAGE}, {'ch1':INTENSITY_IMAGE},['centroid'],2,True,  {('centroid-0',1):29.5*2,
+                                                                                                                 ('centroid-1',1):29.5*2,
+                                                                                                                 ('centroid-0',2):59.5*2,
+                                                                                                                 ('centroid-1',2):69.5*2,
+                                                                                                                 ('centroid-0',3):84.5*2,
+                                                                                                                 ('centroid-1',3):19.5*2,}),
                                          ({'object':LABEL_IMAGE}, None,['convex_perimeter'],1,False,  {('convex_perimeter',1):29*4,
                                                                                                        ('convex_perimeter',2):39*4,
                                                                                                        ('convex_perimeter',3):9*2+19*2,}),
@@ -339,8 +339,8 @@ def test_derived_feature_convexity():
     np.testing.assert_almost_equal(
         derived_props.loc[('convexity', 1), 'feature_value'], 1)
 
-    np.testing.assert_almost_equal(derived_props.loc[('convexity',
-                                                      2), 'feature_value'],
+    np.testing.assert_almost_equal(derived_props.loc[('convexity', 2),
+                                                     'feature_value'],
                                    (156 - 40 + np.sqrt(400 + 400)) / 156,
                                    decimal=3)
 
@@ -350,8 +350,8 @@ def test_derived_feature_convexity():
     np.testing.assert_almost_equal(
         derived_props.loc[('roughness', 1), 'feature_value'], 1)
 
-    np.testing.assert_almost_equal(derived_props.loc[('roughness',
-                                                      2), 'feature_value'],
+    np.testing.assert_almost_equal(derived_props.loc[('roughness', 2),
+                                                     'feature_value'],
                                    156 / (156 - 40 + np.sqrt(400 + 400)),
                                    decimal=3)
 
