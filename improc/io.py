@@ -37,12 +37,19 @@ def parse_collection(pattern, keys):
     # apply pattern to all paths that matched
     parsed_paths = [compiled_pattern.parse(p) for p in paths]
 
-    # build df, exclude file that matched the glob pattern bu not the formatting ( returns None)
+    # build df, exclude file that matched the glob pattern but not the formatting ( returns None)
+    parsed_paths = list(filter(None, parsed_paths))
+    if len(parsed_paths) <= 0:
+        pattern_expanded_basedir = pattern.replace('{basedir}', basedir)
+        raise ValueError(
+            'No files were found that match the pattern: {}'.format(
+                pattern_expanded_basedir))
+
     df = (pd.DataFrame([{
         'pattern': pattern,
         'basedir': basedir,
         **pp.named
-    } for pp in parsed_paths if pp]).set_index(keys).sort_index())
+    } for pp in parsed_paths]).set_index(keys).sort_index())
 
     duplicated_index_mask = df.index.duplicated()
     if duplicated_index_mask.sum():
