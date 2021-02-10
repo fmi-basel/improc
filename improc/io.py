@@ -32,7 +32,7 @@ def parse_collection(pattern, keys):
                 pattern))
 
     basedir = os.path.dirname(pattern.split('{', 1)[0])
-    pattern = pattern.replace(basedir, '{basedir}')
+    pattern = pattern.replace(basedir + os.sep, '{basedir}' + os.sep)
 
     # apply pattern to all paths that matched
     parsed_paths = [compiled_pattern.parse(p) for p in paths]
