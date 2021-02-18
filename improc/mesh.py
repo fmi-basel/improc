@@ -93,7 +93,8 @@ def labels_to_mesh(labels,
                    smoothing_iterations=30,
                    pass_band_param=0.01,
                    target_reduction=0.95,
-                   margin=5):
+                   margin=5,
+                   show_progress=True):
     '''Extract mesh/contour for a labels provided as a numpy array, smooth and decimate.
     
     Meshes are exctracted one label at a time one object crop.
@@ -108,11 +109,16 @@ def labels_to_mesh(labels,
         margin: margin bounding box used to crop each label. Needs at least margin=1 to extract 
         closed contours (i.e. label should not touch the bounding box), slightly more for the 
         smoothing operation.
+        show_progress: display a progress bar. Useful for images containing many labels
     '''
 
     appendFilter = vtk.vtkAppendPolyData()
 
-    for idx, loc in enumerate(tqdm(find_objects(labels)), start=1):
+    iterable = find_objects(labels)
+    if show_progress:
+        iterable = tqdm(iterable)
+
+    for idx, loc in enumerate(iterable, start=1):
         if loc:
 
             loc = tuple(
@@ -172,6 +178,6 @@ def export_vtk_polydata(path, polydata):
     writer = vtk.vtkXMLPolyDataWriter()
     writer.SetFileName(path)
     writer.SetInputData(polydata)
-    writer.SetCompressorTypeToLZMA()
+    writer.SetCompressorTypeToZLib()
     writer.SetCompressionLevel(9)
     writer.Write()
