@@ -55,11 +55,14 @@ def parse_collection(pattern, keys):
     if duplicated_index_mask.sum():
 
         duplicated_index = df[duplicated_index_mask].index
-        example = df.loc(axis=0)[duplicated_index[0]].to_string()
+
+        example = '\n'
+        for p in df.loc(axis=0)[duplicated_index[0]].dc.path:
+            example += p + '\n'
 
         raise ValueError(
-            'Selected keys {} do not form a unique index. e.g. \n{}'.format(
-                keys, example))
+            '\nParsing error:\n\n{}\nSelected keys {} do not form a unique index. e.g. \n{}'
+            .format(df.pattern.iloc[0], keys, example))
 
     return df
 
