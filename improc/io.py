@@ -100,7 +100,8 @@ class DCAccessor:
 
         with ThreadPoolExecutor() as threads:
             return list(
-                threads.map(self.map_read_fct, self.path, self._obj.ext))
+                threads.map(self.map_read_fct, self.path,
+                            self._obj.reset_index().ext))
 
     def write(self,
               data,
@@ -113,7 +114,7 @@ class DCAccessor:
         if not isinstance(data, list):
             data = [data]
 
-        for p, ext, d in zip(self.path, self._obj.ext, data):
+        for p, ext, d in zip(self.path, self._obj.reset_index().ext, data):
 
             out_dir = os.path.dirname(p)
             os.makedirs(out_dir, exist_ok=True)
