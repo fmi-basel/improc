@@ -202,7 +202,7 @@ class DistanceTransformFeatureExtractor(BaseFeatureExtractor):
     }
 
     _implemented_features = set(_features_functions.keys())
-    _require_isotropic = {'mean_radius', 'median_radius'}
+    _require_isotropic = {'median_radius'}
 
     def __init__(self,
                  features=['mean_radius', 'max_radius', 'median_radius'],
