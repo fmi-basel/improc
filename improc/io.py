@@ -104,13 +104,23 @@ class DCAccessor:
               index=True,
               compressed=False,
               imagej=False,
-              compress=0):
+              compress=0,
+              overwrite=False,
+              exist_ok=False):
 
-        # if data is not a list, we assume it is because the is only one item
+        # if data is not a list, we assume it is because there is only one item
         if not isinstance(data, list):
             data = [data]
 
         for p, ext, d in zip(self.path, self._obj.reset_index().ext, data):
+
+            if not overwrite and os.path.isfile(p):
+                if exist_ok:
+                    continue
+                else:
+                    raise RuntimeError(
+                        'file already exist: {}\nTo replace existing files, use overwrite=True\nTo skip existing files use exist_ok=True'
+                        .format(p))
 
             out_dir = os.path.dirname(p)
             os.makedirs(out_dir, exist_ok=True)
@@ -149,7 +159,7 @@ class DCAccessor:
                         imsave(p, d, compress=compress, check_contrast=False)
 
             elif ext == 'npz':
-                # save binary comrpessed numpy array
+                # save binary compressed numpy array
                 out_dir = os.path.dirname(p)
                 os.makedirs(out_dir, exist_ok=True)
                 np.savez_compressed(p, arr=d)
