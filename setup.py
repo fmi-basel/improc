@@ -6,7 +6,7 @@ contrib = [
 
 # setup.
 setup(name='improc',
-      version='0.1',
+      version='0.2',
       description='Collection of image processing routines',
       author=', '.join(contrib),
       packages=find_packages(exclude=[
