@@ -10,9 +10,6 @@ import warnings
 from concurrent.futures import ThreadPoolExecutor
 from collections.abc import Iterable
 
-# TODO add logger
-# TODO add data collection:=dc alias
-
 
 def parse_collection(pattern, keys):
     '''Parse a data collection and returns a dataframe of parsed attributes with keys as index.
@@ -67,7 +64,6 @@ def parse_collection(pattern, keys):
     return df
 
 
-# ~ @pd.api.extensions.register_series_accessor('lsc')
 class DCAccessor:
     '''Adds cached read/write accessors to pandas series representing lightsheet items.'''
     def __init__(self, pandas_obj):

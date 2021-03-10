@@ -8,7 +8,6 @@ def resample_labels(labels, factor):
     '''Resample labels one by one with a gaussian kernel'''
 
     # TODO check alignment for float re-scaling factors
-
     factor = np.broadcast_to(np.asarray(factor), labels.ndim)
     resampled_labels = np.zeros(np.round(labels.shape * factor).astype(int),
                                 dtype=np.int16)
@@ -25,11 +24,6 @@ def resample_labels(labels, factor):
 
         mask = labels[loc] == l
 
-        # get label coordinates and upsample
-        #         coords = np.round(np.where(mask) * factor[:, None]).astype(int)
-        #         coords = tuple([*coords])
-
-        # TODO fix
         resampled_mask = rescale(mask.astype(np.float32),
                                  scale=factor,
                                  multichannel=False,
@@ -37,23 +31,12 @@ def resample_labels(labels, factor):
                                  preserve_range=True,
                                  order=1)
 
-        # create upsampled mask
-        #         resampled_mask = np.zeros(np.round(mask.shape * factor).astype(int),
-        #                                   dtype=np.float32)
-        #         resampled_mask[coords] = np.prod(factor)
-
-        #         # interpolate upsampled image
-        #         resampled_mask = gaussian_filter(resampled_mask, sigma=factor.max())
-
         loc_resampled = tuple(
             slice(
                 np.floor(f * s.start).astype(int),
                 np.floor(f * s.start).astype(int) + s_size)
             for s, f, s_size in zip(loc, factor, resampled_mask.shape))
 
-        # TODO figure out general solution/threshold for different factors
-        # 0.48 instead of 0.5 --> slightly larger label mask to prevent introduction of background between touching labels
-        # not general, e.g. works for (2,0.26,26) to 1, but not from 25 to 37x
         resampled_labels[loc_resampled][resampled_mask > 0.5] = l
 
     return resampled_labels

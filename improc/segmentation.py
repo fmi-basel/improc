@@ -1,5 +1,6 @@
 import itertools
 import numpy as np
+import cv2 as cv
 
 from skimage.filters import threshold_otsu, threshold_li, threshold_yen, threshold_triangle, threshold_minimum
 from scipy.ndimage.filters import gaussian_filter
@@ -109,3 +110,21 @@ def label_with_watershed(mask, sigma=2, spacing=1):
     labels = watershed(-distance, markers=markers, mask=mask)
 
     return labels
+
+
+def approx_gaussian_blur(image, ksize=1001):
+    '''Fast blur approx
+    
+    Notes:
+    ------
+    fast gaussian filter approximation:
+    
+    KOVESI, Peter. Fast almost-gaussian filtering. In: Digital Image Computing:
+    Techniques and Applications (DICTA), 2010 International Conference on. IEEE, 2010. S. 121-125.
+    '''
+
+    image = cv.boxFilter(image, -1, (ksize, ksize))
+    image = cv.boxFilter(image, -1, (ksize, ksize))
+    image = cv.boxFilter(image, -1, (ksize, ksize))
+
+    return image
