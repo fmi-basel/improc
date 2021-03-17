@@ -104,6 +104,7 @@ class DCAccessor:
               index=True,
               compressed=False,
               imagej=False,
+              bigtiff=False,
               compress=0,
               overwrite=False,
               exist_ok=False):
@@ -149,7 +150,13 @@ class DCAccessor:
                     if imagej:
                         imsave(p,
                                d,
-                               imagej=imagej,
+                               imagej=True,
+                               compress=compress,
+                               check_contrast=False)
+                    elif bigtiff:
+                        imsave(p,
+                               d,
+                               bigtiff=True,
                                compress=compress,
                                check_contrast=False)
                     else:
