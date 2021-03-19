@@ -60,7 +60,13 @@ def segment_from_projections(image,
 
         proj = image.max(axis=proj_axis)
         proj = gaussian_filter(proj, sigma=sigma / spacing[[d1, d2]])
-        mask_proj = proj > threshold_method(proj)
+
+        if proj.max() <= 0:
+            # if smoothed projection is empty, default to background
+            # can happen even if the input image has small objects that get smoothed "away" after rounding
+            mask_proj = np.zeros_like(proj, dtype=bool)
+        else:
+            mask_proj = proj > threshold_method(proj)
         mask = np.logical_and(mask, np.expand_dims(mask_proj, axis=proj_axis))
 
     return mask
