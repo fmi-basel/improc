@@ -66,17 +66,27 @@ def smooth_label_edges(labels, sigma, area_eps=0.0001, n_iter_max=100):
 
         # iteratively adjust threshold until the smooth mask has the same area as input
         threshold = 0.5
+        threshold_best = 0.5
         mask_sum = mask.sum()
+        min_n_px_diff = mask_sum
         px_eps = max(1, area_eps * mask_sum)
 
         for i in range(n_iter_max):
             smooth_mask = blurred_mask > threshold
             smooth_mask_sum = smooth_mask.sum()
-            if np.abs(mask.sum() - smooth_mask.sum()) < px_eps:
+            n_px_diff = np.abs(mask.sum() - smooth_mask.sum())
+
+            # safeguard in case it does not converge
+            if min_n_px_diff > n_px_diff:
+                min_n_px_diff = min_n_px_diff
+                threshold_best = threshold
+
+            if n_px_diff < px_eps:
                 break
 
             threshold = threshold * smooth_mask_sum / mask_sum
 
+        smooth_mask = blurred_mask > threshold_best
         smoothed_labels[loc][smooth_mask] = l
 
     return smoothed_labels
