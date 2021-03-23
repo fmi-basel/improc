@@ -4,6 +4,7 @@ from skimage.segmentation import relabel_sequential
 from skimage.measure import regionprops
 from scipy.ndimage import label as nd_label
 from scipy.ndimage.measurements import find_objects
+from scipy.ndimage.filters import gaussian_filter
 
 import warnings
 
@@ -37,3 +38,45 @@ def size_opening(labels, threshold):
     labels = lut[labels]
 
     return labels
+
+
+def smooth_label_edges(labels, sigma, area_eps=0.0001, n_iter_max=100):
+    '''smooth labels one by one.
+    
+    Attempts to maintain the original area/volume of each mask
+    '''
+
+    locs = find_objects(labels)
+    sigma = np.broadcast_to(np.asarray(sigma), labels.ndim)
+    margin = np.rint(4 * sigma).astype(int)
+    smoothed_labels = np.zeros_like(labels)
+
+    for l, loc in enumerate(locs, start=1):
+        if loc is None:
+            continue
+
+        loc = tuple(
+            slice(max(0, s.start - m), s.stop + m)
+            for s, m in zip(loc, margin))
+        mask = labels[loc] == l
+        blurred_mask = gaussian_filter(mask.astype(np.float32),
+                                       sigma,
+                                       mode='constant',
+                                       cval=0.)
+
+        # iteratively adjust threshold until the smooth mask has the same area as input
+        threshold = 0.5
+        mask_sum = mask.sum()
+        px_eps = max(1, area_eps * mask_sum)
+
+        for i in range(n_iter_max):
+            smooth_mask = blurred_mask > threshold
+            smooth_mask_sum = smooth_mask.sum()
+            if np.abs(mask.sum() - smooth_mask.sum()) < px_eps:
+                break
+
+            threshold = threshold * smooth_mask_sum / mask_sum
+
+        smoothed_labels[loc][smooth_mask] = l
+
+    return smoothed_labels
