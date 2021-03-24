@@ -74,7 +74,7 @@ def match_spacing(img,
     elif image_type == 'label_interp':
         return resample_labels(img, scale)
 
-    elif image_type == 'label_nearest':
+    elif image_type in ['label_nearest', 'nearest']:
         return rescale(img,
                        scale=scale,
                        multichannel=False,
